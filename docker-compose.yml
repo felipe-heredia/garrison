@@ -1,0 +1,17 @@
+name: garrison
+
+services:
+  postgres:
+    container_name: garrison_postgres
+    image: 'bitnami/postgresql:latest'
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_DB=garrison
+    volumes:
+      - garrison_pg_data:/bitnami/postgresql
+
+volumes:
+  garrison_pg_data:
