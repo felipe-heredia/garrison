@@ -3,43 +3,45 @@ package api
 import (
 	"net/http"
 
+	database "garrison/internal/database/postgres"
+	"garrison/internal/models"
+
 	"github.com/gin-gonic/gin"
 )
 
-type User struct {
-	ID    string `json:id`
-	Name  string `json:name`
-	Email string `json:email`
-}
-
-var users = []User{
-	{ID: "1", Name: "Felipe Heredia de Moura", Email: "hello@felipeheredia.com"},
-}
-
 func GetUsers(c *gin.Context) {
+	var users []*models.User
+
+	database.DB.Find(&users)
+
 	c.IndentedJSON(http.StatusOK, users)
 }
 
 func CreateUser(c *gin.Context) {
-	var newUser User
+	var newUser models.User
 
 	if err := c.BindJSON(&newUser); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	users = append(users, newUser)
-	c.IndentedJSON(http.StatusCreated, newUser)
+	if err := database.DB.Create(&newUser).Error; err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, newUser)
 }
 
 func GetUserById(c *gin.Context) {
 	id := c.Param("id")
+	var user models.User
 
-	for _, a := range users {
-		if a.ID == id {
-			c.IndentedJSON(http.StatusOK, a)
-			return
-		}
+	if err := database.DB.First(&user, "id = ?", id).Error; err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "User not found"})
+		return
 	}
 
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "User not found"})
+	c.IndentedJSON(http.StatusOK, user)
+
 }
